@@ -24,7 +24,7 @@ func NewFileLoader(path string, logger usecase.Logger) *FileLoader {
 	}
 }
 
-func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.CertificateInfo, []*entity.CertError) {
+func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, []*entity.CertError) {
 	select {
 	case <-ctx.Done():
 		return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeUnknown, ctx.Err())}
@@ -45,7 +45,7 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.Certificat
 	}
 
 	// 1) Tentative PEM (un ou plusieurs blocs)
-	var certs []*entity.CertificateInfo
+	var certs []*entity.CertInfo
 	rest := data
 	seenPEM := false
 
@@ -67,7 +67,7 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.Certificat
 			if err != nil {
 				return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeParse, err)}
 			}
-			info := &entity.CertificateInfo{
+			info := &entity.CertInfo{
 				CommonName: cert.Subject.CommonName,
 				Issuer:     cert.Issuer.CommonName,
 				NotBefore:  cert.NotBefore,
@@ -100,7 +100,7 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.Certificat
 		}
 	}
 
-	info := &entity.CertificateInfo{
+	info := &entity.CertInfo{
 		CommonName: cert.Subject.CommonName,
 		Issuer:     cert.Issuer.CommonName,
 		NotBefore:  cert.NotBefore,
@@ -108,5 +108,5 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.Certificat
 		FilePath:   l.Path,
 	}
 
-	return []*entity.CertificateInfo{info}, nil
+	return []*entity.CertInfo{info}, nil
 }

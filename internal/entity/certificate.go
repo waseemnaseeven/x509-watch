@@ -23,6 +23,6 @@ func (c *CertInfo) ValidSinceSeconds(now time.Time) float64 {
 }
 
 // Indicate if certificate expire now
-func (c *CertInfo) isExpired(now time.Time) bool {
+func (c *CertInfo) IsExpired(now time.Time) bool {
 	return now.After(c.NotAfter)
 }

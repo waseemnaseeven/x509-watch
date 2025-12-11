@@ -21,8 +21,8 @@ func NewDirLoader(root string, logger usecase.Logger) *DirLoader {
 	}
 }
 
-func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*entity.CertificateInfo, []*entity.CertError) {
-	var certs []*entity.CertificateInfo
+func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, []*entity.CertError) {
+	var certs []*entity.CertInfo
 	var errs []*entity.CertError
 
 	var walk func(path string)
