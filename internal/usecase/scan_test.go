@@ -9,11 +9,11 @@ import (
 )
 
 type fakeLoader struct {
-	certs []*entity.CertificateInfo
+	certs []*entity.CertInfo
 	errs  []*entity.CertError
 }
 
-func (f *fakeLoader) LoadCertificates(ctx context.Context) ([]*entity.CertificateInfo, []*entity.CertError) {
+func (f *fakeLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, []*entity.CertError) {
 	return f.certs, f.errs
 }
 
@@ -21,7 +21,7 @@ type fakePublisher struct {
 	calls int
 }
 
-func (f *fakePublisher) PublishCerts(certs []*entity.CertificateInfo, errs []*entity.CertError) {
+func (f *fakePublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.CertError) {
 	f.calls++
 }
 
@@ -29,10 +29,11 @@ type fakeLogger struct{}
 
 func (f *fakeLogger) Infof(format string, args ...any)  {}
 func (f *fakeLogger) Errorf(format string, args ...any) {}
+func (f *fakeLogger) Debugf(format string, args ...any) {}
 
 func TestCertScanService_RunOnce(t *testing.T) {
 	loader := &fakeLoader{
-		certs: []*entity.CertificateInfo{
+		certs: []*entity.CertInfo{
 			{CommonName: "example.com"},
 		},
 	}

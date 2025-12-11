@@ -10,7 +10,7 @@ type CertErrorType string
 const (
 	ErrTypeRead    CertErrorType = "read_error"
 	ErrTypeParse   CertErrorType = "parse_error"
-	ErrorTypePEM   CertErrorType = "pem_error"
+	ErrTypePEM     CertErrorType = "pem_error"
 	ErrTypeUnknown CertErrorType = "unknown_error"
 )
 

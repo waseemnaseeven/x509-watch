@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"x509-watch/internal/entity"
-	"x509-watch/internal/usecase"
 )
 
 var (
@@ -109,7 +108,7 @@ func boolToFloat(b bool) float64 {
 	return 0.0
 }
 
-func (p *PromPublisher) PublishCerts(certs []*entity.CertificateInfo, errs []*entity.CertError) {
+func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.CertError) {
 	now := p.Clock()
 
 	for _, c := range certs {

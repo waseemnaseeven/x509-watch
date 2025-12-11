@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"os"
 	"time"
 )
 
@@ -22,22 +21,6 @@ func FromFlags() *Config {
 	flag.DurationVar(&cfg.ScanInterval, "interval", 0, "Scan interval (0 = only once at startup)")
 
 	flag.Parse()
-
-	// Overrides par variables d'env (optionnel, mais pratique)
-	if v := os.Getenv("X509_WATCH_LISTEN"); v != "" {
-		cfg.ListenAddr = v
-	}
-	if v := os.Getenv("X509_WATCH_CERT_FILE"); v != "" {
-		cfg.CertFile = v
-	}
-	if v := os.Getenv("X509_WATCH_CERT_DIR"); v != "" {
-		cfg.CertDir = v
-	}
-	if v := os.Getenv("X509_WATCH_INTERVAL"); v != "" {
-		if d, err := time.ParseDuration(v); err == nil {
-			cfg.ScanInterval = d
-		}
-	}
 
 	return cfg
 }

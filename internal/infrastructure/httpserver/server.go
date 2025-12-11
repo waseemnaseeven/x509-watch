@@ -15,7 +15,7 @@ type Server struct {
 	Logger  usecase.Logger
 }
 
-func NewServer(addr string, logger Logger) *Server {
+func NewServer(addr string, logger usecase.Logger) *Server {
 	return &Server{
 		Address: addr,
 		Logger:  logger,
@@ -31,7 +31,7 @@ func (s *Server) Serve(ctx context.Context) error {
 	})
 
 	srv := &http.Server{
-		Addr:    s.addr,
+		Addr:    s.Address,
 		Handler: mux,
 	}
 
@@ -43,7 +43,7 @@ func (s *Server) Serve(ctx context.Context) error {
 		_ = srv.Shutdown(shutdownCtx)
 	}()
 
-	s.Logger.Infof("HTTP server listening on %s", s.Addr)
+	s.Logger.Infof("HTTP server listening on %s", s.Address)
 	err := srv.ListenAndServe()
 	if err == http.ErrServerClosed {
 		s.Logger.Infof("HTTP server shut down")
