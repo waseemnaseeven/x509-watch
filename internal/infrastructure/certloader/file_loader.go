@@ -13,8 +13,8 @@ import (
 )
 
 type FileLoader struct {
-	Path   string
-	Logger usecase.Logger
+	Path   	string
+	Logger 	usecase.Logger
 }
 
 func NewFileLoader(path string, logger usecase.Logger) *FileLoader {
@@ -43,7 +43,7 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, 
 	if err != nil {
 		return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeRead, err)}
 	}
-)
+
 	var certs []*entity.CertInfo
 	rest := data
 	seenPEM := false
