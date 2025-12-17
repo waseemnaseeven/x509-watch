@@ -1,6 +1,8 @@
 module x509-watch
 
-go 1.25.4
+go 1.23.0
+
+toolchain go1.23.12
 
 require github.com/prometheus/client_golang v1.19.0
 
