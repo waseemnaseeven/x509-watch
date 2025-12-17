@@ -1,0 +1,73 @@
+
+services:
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "4000:4000"
+    networks:
+      - network
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - grafana-storage:/var/lib/grafana
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    networks:
+      - network
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules/
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    networks:
+      - network
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+
+  karma:
+    image: ghcr.io/prymitive/karma:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - network
+    environment:
+      CONFIG_FILE: >-
+        /etc/karma/karma.yml
+    volumes:
+      - ./karma/karma.yml:/etc/karma/karma.yml
+
+  x509-watch:
+    container_name: x509-watch
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        GO_VERSION: "1.22"
+        VERSION: "dev"
+        REVISION: "local"
+    command:
+      - "--listen=:9101"
+      - "--cert-dir=/certs"
+      - "--interval=1m"
+      - "--log-level=info"
+    volumes:
+      - ../certs:/certs:ro
+    ports:
+      - "9101:9101"
+    networks:
+      - network
+
+networks:
+  network:
+
+
+volumes:
+  grafana-storage: {}
+  prometheus-storage: {}
+  alertmanager-storage: {}
+
+  
