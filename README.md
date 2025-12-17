@@ -6,6 +6,7 @@ An exporter to monitor x509 certificates expiration on your devices with a simpl
 - les flags 
 - mieux comprendre server.go
 - mieux comprendre testcase
-- frontpage sur /
+- frontpage sur / qui mene vers home
+    - UI sur les certificats expires
 
 ## 
