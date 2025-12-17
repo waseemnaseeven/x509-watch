@@ -12,6 +12,12 @@ import (
 )
 
 var (
+	validCerts = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "x509_valid_certs",
+			Help: "Number of current valid certs observed by x509-watch",
+		},
+	)
 	certNotBefore = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "x509_cert_not_before",
@@ -44,14 +50,6 @@ var (
 		[]string{"common_name", "issuer", "filepath"},
 	)
 
-	certValidSinceSeconds = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "x509_cert_valid_since_seconds",
-			Help: "Seconds since certificate became valid",
-		},
-		[]string{"common_name", "issuer", "filepath"},
-	)
-
 	certErrorGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "x509_cert_error",
@@ -78,18 +76,18 @@ var (
 
 func init() {
 	prometheus.MustRegister(
+		validCerts,
 		certNotBefore,
 		certNotAfter,
 		certExpired,
 		certExpiresInSeconds,
-		certValidSinceSeconds,
 		certErrorGauge,
 		readErrorsCounter,
 		buildInfo,
 	)
 }
 
-// PromPublisher implémente MetricsPublisher.
+// PromPublisher implement MetricsPublisher.
 type PromPublisher struct {
 	Clock func() time.Time
 }
@@ -109,7 +107,10 @@ func boolToFloat(b bool) float64 {
 }
 
 func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.CertError) {
+
 	now := p.Clock()
+
+	validCount := 0
 
 	for _, c := range certs {
 		labels := prometheus.Labels{
@@ -117,12 +118,22 @@ func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.Ce
 			"issuer":      c.Issuer,
 			"filepath":    c.FilePath,
 		}
-		certNotBefore.With(labels).Set(float64(c.NotBefore.Unix()))
-		certNotAfter.With(labels).Set(float64(c.NotAfter.Unix()))
-		certExpired.With(labels).Set(boolToFloat(c.IsExpired(now)))
-		certExpiresInSeconds.With(labels).Set(c.ExpiresInSeconds(now))
-		certValidSinceSeconds.With(labels).Set(c.ValidSinceSeconds(now))
+		notBefore := float64(c.NotBefore.Unix())
+		notAfter := float64(c.NotAfter.Unix())
+		expiresIn := c.ExpiresInSeconds(now)
+		expired := c.IsExpired(now)
+
+		certNotBefore.With(labels).Set(notBefore)
+		certNotAfter.With(labels).Set(notAfter)
+		certExpired.With(labels).Set(boolToFloat(expired))
+		certExpiresInSeconds.With(labels).Set(expiresIn)
+
+		if !expired {
+			validCount++
+		}
 	}
+
+	validCerts.Set(float64(validCount))
 
 	for _, e := range errs {
 		readErrorsCounter.Inc()
@@ -133,7 +144,6 @@ func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.Ce
 	}
 }
 
-// SetBuildInfo doit être appelée une fois au démarrage.
 func SetBuildInfo(version, revision string) {
 	buildInfo.With(prometheus.Labels{
 		"version":   version,
