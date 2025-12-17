@@ -29,6 +29,7 @@ type fakeLogger struct{}
 
 func (f *fakeLogger) Infof(format string, args ...any)  {}
 func (f *fakeLogger) Errorf(format string, args ...any) {}
+func (f *fakeLogger) Warnf(format string, args ...any)  {}
 func (f *fakeLogger) Debugf(format string, args ...any) {}
 
 func TestCertScanService_RunOnce(t *testing.T) {
@@ -71,5 +72,7 @@ func TestCertScanService_RunPeriodic_Stop(t *testing.T) {
 
 	time.Sleep(25 * time.Millisecond)
 	cancel()
-	// On ne teste pas précisément le nombre d'appels ici, juste que ça ne panique pas.
+	if pub.calls < 2 {
+		t.Fatalf("expected at least 2 scan runs, got %d", pub.calls)
+	}
 }

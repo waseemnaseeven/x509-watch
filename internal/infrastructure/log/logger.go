@@ -1,46 +1,53 @@
 package log
 
 import (
-	stdlog "log"
+	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 
 	"x509-watch/internal/usecase"
 )
 
-type LogLevel int
-
-const (
-	LevelInfo LogLevel = iota
-	LevelDebug
-)
-
 type Logger struct {
-	logger *stdlog.Logger
-	level  LogLevel
+	logger *slog.Logger
 }
 
-func NewLogger() usecase.Logger {
-	level := LevelInfo
-	if os.Getenv("X509_WATCH_DEBUG") == "1" {
-		level = LevelDebug
-	}
+func NewLogger(level string) usecase.Logger {
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: parseLevel(level),
+	})
 
 	return &Logger{
-		logger: stdlog.New(os.Stdout, "[x509-watch] ", stdlog.LstdFlags|stdlog.Lmsgprefix),
-		level:  level,
+		logger: slog.New(handler),
+	}
+}
+
+func parseLevel(level string) slog.Level {
+	switch strings.ToLower(level) {
+	case "debug":
+		return slog.LevelDebug
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
 	}
 }
 
 func (l *Logger) Infof(format string, args ...any) {
-	l.logger.Printf("INFO: "+format, args...)
+	l.logger.Info(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Warnf(format string, args ...any) {
+	l.logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Errorf(format string, args ...any) {
-	l.logger.Printf("ERROR: "+format, args...)
+	l.logger.Error(fmt.Sprintf(format, args...))
 }
 
 func (l *Logger) Debugf(format string, args ...any) {
-	if l.level >= LevelDebug {
-		l.logger.Printf("DEBUG: "+format, args...)
-	}
+	l.logger.Debug(fmt.Sprintf(format, args...))
 }

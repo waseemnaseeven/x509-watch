@@ -10,7 +10,7 @@ import (
 )
 
 func TestFileLoader_InvalidPath(t *testing.T) {
-	logger := log.NewLogger()
+	logger := log.NewLogger("debug")
 	fl := NewFileLoader("does-not-exist.pem", logger)
 
 	certs, errs := fl.LoadCertificates(context.Background())
@@ -30,7 +30,7 @@ func TestFileLoader_ValidPEM_NoCert(t *testing.T) {
 		t.Fatalf("write temp file: %v", err)
 	}
 
-	logger := log.NewLogger()
+	logger := log.NewLogger("debug")
 	fl := NewFileLoader(path, logger)
 
 	certs, errs := fl.LoadCertificates(context.Background())

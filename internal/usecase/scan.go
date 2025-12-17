@@ -20,13 +20,14 @@ func (s *CertScanService) RunOnce(ctx context.Context) {
 	s.Logger.Infof("Scan done in %s: %d certs, %d errors", time.Since(start), len(certs), len(errs))
 }
 
-// Periodic Scan with ticker and recover
+// RunPeriodic triggers an initial scan and then keeps scanning at the given interval until ctx is cancelled.
 func (s *CertScanService) RunPeriodic(ctx context.Context, interval time.Duration) {
-	defer func() {
-		if r := recover(); r != nil {
-			s.Logger.Errorf("panic recovered in RunPeriodic: %v", r)
-		}
-	}()
+	if interval <= 0 {
+		s.RunOnce(ctx)
+		return
+	}
+
+	s.runOnceSafe(ctx)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -37,7 +38,16 @@ func (s *CertScanService) RunPeriodic(ctx context.Context, interval time.Duratio
 			s.Logger.Infof("Stopping periodic scan")
 			return
 		case <-ticker.C:
-			s.RunOnce(ctx)
+			s.runOnceSafe(ctx)
 		}
 	}
+}
+
+func (s *CertScanService) runOnceSafe(ctx context.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			s.Logger.Errorf("panic recovered in RunPeriodic: %v", r)
+		}
+	}()
+	s.RunOnce(ctx)
 }
