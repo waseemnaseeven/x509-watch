@@ -21,9 +21,10 @@ var (
 )
 
 func main() {
-	logger := log.NewLogger()
-
 	cfg := config.FromFlags()
+
+	logger := log.NewLogger(cfg.LogLevel)
+
 	if err := cfg.Validate(); err != nil {
 		logger.Errorf("invalid config: %v", err)
 		os.Exit(1)
@@ -51,11 +52,11 @@ func main() {
 		Logger:    logger,
 	}
 
-	scanSvc.RunOnce(ctx)
-
 	if cfg.ScanInterval > 0 {
 		logger.Infof("Starting periodic scan every %s", cfg.ScanInterval)
 		go scanSvc.RunPeriodic(ctx, cfg.ScanInterval)
+	} else {
+		scanSvc.RunOnce(ctx)
 	}
 
 	server := httpserver.NewServer(cfg.ListenAddr, logger)
