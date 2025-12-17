@@ -31,7 +31,6 @@ func (e *CertError) Unwrap() error {
 	return e.Err
 }
 
-// helper
 func NewCertError(path string, t CertErrorType, err error) *CertError {
 	if err != nil {
 		err = errors.New(string(t))
