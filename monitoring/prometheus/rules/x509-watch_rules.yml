@@ -2,12 +2,13 @@ groups:
   - name: X509-WATCH-EXPIRY
     rules:
       - alert: X509CertificateExpired
-        expr: x509_cert_expires_in_seconds <= 0
+        expr: x509_cert_expired == 1
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: X.509 certificate have expired ({{ $labels.common_name }})
+          
       - alert: X509CertificateExpiringIn7Days
         expr: x509_cert_expires_in_seconds > 0
           and x509_cert_expires_in_seconds <= 604800
@@ -37,8 +38,8 @@ groups:
               LABELS = {{ $labels }}
 
       - alert: X509CertificateExpiringIn30Days
-        expr: x509_cert_expires_in_seconds > 1296000
-          and x509_cert_expires_in_seconds <= 2592000
+        expr: (x509_cert_not_after - time()) > 0
+          and (x509_cert_not_after - time()) <= 2592000
         for: 15m
         labels:
           severity: warning
