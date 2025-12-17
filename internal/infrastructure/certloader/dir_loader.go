@@ -55,7 +55,7 @@ func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, [
 			return
 		}
 
-		// Fichier : on tente de le parser comme cert.
+
 		l.Logger.Debugf("Trying file %s", path)
 
 		fl := NewFileLoader(path, l.Logger)
