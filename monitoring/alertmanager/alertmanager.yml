@@ -7,7 +7,7 @@ route:
 receivers:
   - name: 'web.hook'
     webhook_configs:
-      - url: 'https://webhook.site/06d6c4d2-aea2-4547-aea5-30d46c2b74c0'
+      - url: 'https://webhook.site/7de8654c-b9cf-48c1-8822-7620e0bc6e1f'
 inhibit_rules:
   - source_match:
       severity: 'critical'

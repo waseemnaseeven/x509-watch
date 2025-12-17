@@ -1,15 +1,5 @@
 
 services:
-  grafana:
-    image: grafana/grafana-oss:latest
-    ports:
-      - "4000:4000"
-    networks:
-      - network
-    volumes:
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-      - grafana-storage:/var/lib/grafana
-
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -64,9 +54,7 @@ services:
 networks:
   network:
 
-
 volumes:
-  grafana-storage: {}
   prometheus-storage: {}
   alertmanager-storage: {}
 

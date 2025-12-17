@@ -1,2 +1,65 @@
-rules:
-  egiq
+groups:
+  - name: X509-WATCH-EXPIRY
+    rules:
+      - alert: X509CertificateExpired
+        expr: x509_cert_expires_in_seconds <= 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: X.509 certificate have expired ({{ $labels.common_name }})
+      - alert: X509CertificateExpiringIn7Days
+        expr: x509_cert_expires_in_seconds > 0
+          and x509_cert_expires_in_seconds <= 604800
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: X.509 certificate expiring in less than 7 days ({{ $labels.common_name }})
+          description: |
+            The X.509 certificate for {{ $labels.common_name }} ({{ $labels.filepath }})
+            will expire in less than 7 days.
+              VALUE = {{ $value }} seconds until expiry
+              LABELS = {{ $labels }}
+
+      - alert: X509CertificateExpiringIn15Days
+        expr: x509_cert_expires_in_seconds > 604800
+          and x509_cert_expires_in_seconds <= 1296000
+        for: 10m
+        labels:
+          severity: high
+        annotations:
+          summary: X.509 certificate expiring in 7-15 days ({{ $labels.common_name }})
+          description: |
+            The X.509 certificate for {{ $labels.common_name }} ({{ $labels.filepath }})
+            will expire in between 7 and 15 days.
+              VALUE = {{ $value }} seconds until expiry
+              LABELS = {{ $labels }}
+
+      - alert: X509CertificateExpiringIn30Days
+        expr: x509_cert_expires_in_seconds > 1296000
+          and x509_cert_expires_in_seconds <= 2592000
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: X.509 certificate expiring in 15-30 days ({{ $labels.common_name }})
+          description: |
+            The X.509 certificate for {{ $labels.common_name }} ({{ $labels.filepath }})
+            will expire in between 15 and 30 days.
+              VALUE = {{ $value }} seconds until expiry
+              LABELS = {{ $labels }}
+
+      - alert: X509CertificateExpiringIn60Days
+        expr: x509_cert_expires_in_seconds > 2592000
+          and x509_cert_expires_in_seconds <= 5184000
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: X.509 certificate expiring in 30-60 days ({{ $labels.common_name }})
+          description: |
+            The X.509 certificate for {{ $labels.common_name }} ({{ $labels.filepath }})
+            will expire in between 30 and 60 days.
+              VALUE = {{ $value }} seconds until expiry
+              LABELS = {{ $labels }}
