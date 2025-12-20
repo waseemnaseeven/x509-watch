@@ -18,17 +18,6 @@ services:
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
 
-  karma:
-    image: ghcr.io/prymitive/karma:latest
-    ports:
-      - "8080:8080"
-    networks:
-      - network
-    environment:
-      CONFIG_FILE: >-
-        /etc/karma/karma.yml
-    volumes:
-      - ./karma/karma.yml:/etc/karma/karma.yml
 
   x509-watch:
     container_name: x509-watch
