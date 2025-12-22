@@ -4,7 +4,7 @@ ARG GO_VERSION=1.23
 FROM golang:${GO_VERSION}-alpine AS builder
 
 WORKDIR /src
-RUN apk add --no-cache ca-certificates  build-base
+RUN apk add --no-cache  build-base
 ENV GOTOOLCHAIN=auto
 
 COPY go.mod go.sum ./
