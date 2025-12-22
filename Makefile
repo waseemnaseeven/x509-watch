@@ -12,7 +12,7 @@ CERT_CN ?= example.com
 CERT_DAYS ?= 365
 CERT_GOOD_COUNT ?= 10
 
-COMPOSE_FILE ?= monitoring/docker-compose.yml
+COMPOSE_FILE ?= docker-compose.yml
 
 .DEFAULT_GOAL := help
 

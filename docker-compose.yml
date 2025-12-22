@@ -7,8 +7,8 @@ services:
     networks:
       - network
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./prometheus/rules:/etc/prometheus/rules/
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules/
   alertmanager:
     image: prom/alertmanager:latest
     ports:
@@ -16,13 +16,22 @@ services:
     networks:
       - network
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
 
+  vault:
+    image: hashicorp/vault:1.21
+    container_name: vault-dev
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    command: vault server -dev
 
   x509-watch:
     container_name: x509-watch
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
       args:
         GO_VERSION: "1.22"
@@ -34,7 +43,7 @@ services:
       - "--interval=1m"
       - "--log-level=info"
     volumes:
-      - ../certs:/certs:ro
+      - ./certs:/certs:ro
     ports:
       - "9101:9101"
     networks:
@@ -44,7 +53,9 @@ networks:
   network:
 
 volumes:
+  vault_data: {}
   prometheus-storage: {}
   alertmanager-storage: {}
+
 
   
