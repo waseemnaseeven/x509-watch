@@ -29,10 +29,10 @@ func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, [
 
 	walk = func(path string) {
 		select {
-			case <-ctx.Done():
-				errs = append(errs, entity.NewCertError(path, entity.ErrTypeUnknown, ctx.Err()))
-				return
-			default:
+		case <-ctx.Done():
+			errs = append(errs, entity.NewCertError(path, entity.ErrTypeUnknown, ctx.Err()))
+			return
+		default:
 		}
 
 		info, err := os.Stat(path)
@@ -54,7 +54,6 @@ func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, [
 			}
 			return
 		}
-
 
 		l.Logger.Debugf("Trying file %s", path)
 

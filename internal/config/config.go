@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	ListenAddr   	string
-	CertFile     	string
-	CertDir      	string
-	ScanInterval 	time.Duration
-	LogLevel     	string
-	ShowHelp		bool	
+	ListenAddr   string
+	CertFile     string
+	CertDir      string
+	ScanInterval time.Duration
+	LogLevel     string
+	ShowHelp     bool
 }
 
 func FromFlags() *Config {
@@ -29,7 +29,6 @@ func FromFlags() *Config {
 			%s --cert-dir=/etc/vault/certs --interval=1m --log-level=debug
 			`, os.Args[0], os.Args[0])
 	}
-
 
 	flag.StringVar(&cfg.ListenAddr, "listen", ":9101", "HTTP listen address (host:port)")
 	flag.StringVar(&cfg.CertFile, "cert-file", "", "Path to a certificate file (PEM/DER)")
@@ -55,15 +54,15 @@ func (e ErrConfig) Error() string { return string(e) }
 
 func (c *Config) Validate() error {
 	switch {
-		case c.CertFile == "" && c.CertDir == "":
-			return ErrConfig("either --cert-file or --cert-dir must be set")
-		case c.CertFile != "" && c.CertDir != "":
-			return ErrConfig("only one of --cert-file or --cert-dir can be set")
-		case c.ScanInterval < 0:
-			return ErrConfig("interval must be greater or equal to 0")
+	case c.CertFile == "" && c.CertDir == "":
+		return ErrConfig("either --cert-file or --cert-dir must be set")
+	case c.CertFile != "" && c.CertDir != "":
+		return ErrConfig("only one of --cert-file or --cert-dir can be set")
+	case c.ScanInterval < 0:
+		return ErrConfig("interval must be greater or equal to 0")
 	}
 	switch strings.ToLower(c.LogLevel) {
-		case "debug", "info", "warn", "warning", "error":
+	case "debug", "info", "warn", "warning", "error":
 	default:
 		return ErrConfig("log-level must be one of: debug, info, warn, error")
 	}

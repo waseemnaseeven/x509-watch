@@ -13,8 +13,8 @@ import (
 )
 
 type FileLoader struct {
-	Path   	string
-	Logger 	usecase.Logger
+	Path   string
+	Logger usecase.Logger
 }
 
 func NewFileLoader(path string, logger usecase.Logger) *FileLoader {
@@ -26,9 +26,9 @@ func NewFileLoader(path string, logger usecase.Logger) *FileLoader {
 
 func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, []*entity.CertError) {
 	select {
-		case <-ctx.Done():
-			return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeUnknown, ctx.Err())}
-		default:
+	case <-ctx.Done():
+		return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeUnknown, ctx.Err())}
+	default:
 	}
 
 	l.Logger.Debugf("Loading certificates from file %s", l.Path)
@@ -61,22 +61,22 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*entity.CertInfo, 
 		seenPEM = true
 
 		switch block.Type {
-			case "CERTIFICATE":
-				cert, err := x509.ParseCertificate(block.Bytes)
-				if err != nil {
-					return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeParse, err)}
-				}
-				info := &entity.CertInfo{
-					CommonName: cert.Subject.CommonName,
-					Issuer:     cert.Issuer.CommonName,
-					NotBefore:  cert.NotBefore,
-					NotAfter:   cert.NotAfter,
-					FilePath:   l.Path,
-				}
-				certs = append(certs, info)
+		case "CERTIFICATE":
+			cert, err := x509.ParseCertificate(block.Bytes)
+			if err != nil {
+				return nil, []*entity.CertError{entity.NewCertError(l.Path, entity.ErrTypeParse, err)}
+			}
+			info := &entity.CertInfo{
+				CommonName: cert.Subject.CommonName,
+				Issuer:     cert.Issuer.CommonName,
+				NotBefore:  cert.NotBefore,
+				NotAfter:   cert.NotAfter,
+				FilePath:   l.Path,
+			}
+			certs = append(certs, info)
 
-			default:
-				l.Logger.Debugf("Ignoring PEM block type %s in %s", block.Type, l.Path)
+		default:
+			l.Logger.Debugf("Ignoring PEM block type %s in %s", block.Type, l.Path)
 		}
 	}
 

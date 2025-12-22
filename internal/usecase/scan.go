@@ -34,11 +34,11 @@ func (s *CertScanService) RunPeriodic(ctx context.Context, interval time.Duratio
 
 	for {
 		select {
-			case <-ctx.Done():
-				s.Logger.Infof("Stopping periodic scan")
-				return
-			case <-ticker.C:
-				s.runOnceSafe(ctx)
+		case <-ctx.Done():
+			s.Logger.Infof("Stopping periodic scan")
+			return
+		case <-ticker.C:
+			s.runOnceSafe(ctx)
 		}
 	}
 }
