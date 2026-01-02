@@ -4,7 +4,7 @@ An exporter to monitor x509 certificates expiration on your devices with a simpl
 
 ## TODO
 
-- [] Test with a Vault agent
+- [ ] Test with a Vault agent
 - [ ] Refacto errors
 - [ ] Frontpage UI at the root called `web/`
 - [x] GitHub Actions CI 
