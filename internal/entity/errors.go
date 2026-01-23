@@ -32,8 +32,12 @@ func (e *CertError) Unwrap() error {
 }
 
 func NewCertError(path string, t CertErrorType, err error) *CertError {
-	if err != nil {
+	if err == nil {
 		err = errors.New(string(t))
 	}
-	return &CertError{}
+	return &CertError{
+		Path: path,
+		Type: t,
+		Err:  err,
+	}
 }
