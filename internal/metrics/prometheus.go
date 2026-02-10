@@ -1,5 +1,3 @@
-// TODO: Metrics openMetrics Standard, prometheus gaugeVec with init
-
 package metrics
 
 import (
@@ -8,7 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"x509-watch/internal/entity"
+	"x509-watch/internal/certloader"
 )
 
 var (
@@ -87,7 +85,7 @@ func init() {
 	)
 }
 
-// PromPublisher implement MetricsPublisher.
+// PromPublisher publishes certificate metrics to Prometheus.
 type PromPublisher struct {
 	Clock func() time.Time
 }
@@ -106,7 +104,14 @@ func boolToFloat(b bool) float64 {
 	return 0.0
 }
 
-func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.CertError) {
+func (p *PromPublisher) PublishCerts(certs []*certloader.CertInfo, errs []*certloader.CertError) {
+
+	// Reset all metrics before republishing
+	certNotBefore.Reset()
+	certNotAfter.Reset()
+	certExpired.Reset()
+	certExpiresInSeconds.Reset()
+	certErrorGauge.Reset()
 
 	now := p.Clock()
 
@@ -118,6 +123,7 @@ func (p *PromPublisher) PublishCerts(certs []*entity.CertInfo, errs []*entity.Ce
 			"issuer":      c.Issuer,
 			"filepath":    c.FilePath,
 		}
+
 		notBefore := float64(c.NotBefore.Unix())
 		notAfter := float64(c.NotAfter.Unix())
 		expiresIn := c.ExpiresInSeconds(now)

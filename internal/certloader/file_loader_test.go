@@ -2,16 +2,14 @@ package certloader
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"x509-watch/internal/infrastructure/log"
 )
 
 func TestFileLoader_InvalidPath(t *testing.T) {
-	logger := log.NewLogger("debug")
-	fl := NewFileLoader("does-not-exist.pem", logger)
+	fl := NewFileLoader("does-not-exist.pem", slog.Default())
 
 	certs, errs := fl.LoadCertificates(context.Background())
 	if len(certs) != 0 {
@@ -30,8 +28,7 @@ func TestFileLoader_ValidPEM_NoCert(t *testing.T) {
 		t.Fatalf("write temp file: %v", err)
 	}
 
-	logger := log.NewLogger("debug")
-	fl := NewFileLoader(path, logger)
+	fl := NewFileLoader(path, slog.Default())
 
 	certs, errs := fl.LoadCertificates(context.Background())
 	if len(certs) != 0 {
