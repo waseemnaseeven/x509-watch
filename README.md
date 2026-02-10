@@ -4,14 +4,9 @@ An exporter to monitor x509 certificates expiration on your devices with a simpl
 
 ## TODO
 
-- [ ] Test with a Vault agent
+- [x] Test with a Vault agent
 - [ ] Refacto errors
 - [ ] Frontpage UI at the root called `web/`
-- [x] GitHub Actions CI 
-  - [x] test go
-  - [x] test docker
-  - [x] test release 
-  - [ ] test web `npm run test`
 
 ## Installation
 
@@ -21,27 +16,30 @@ Follow the Makefile :
 ```
 make help 
 
-[Go]
-  go-build: go-fmt go-vet  
-  go-run:        
-  go-test:       
-  go-vet:        
-  go-fmt:        
-  go-tidy:       
-  go-cover:      
-  go-clean:      
+x509-watch — available targets
 
-[Certificats]
-  certs          Generates all certs
-  cert-good:     
-  cert-expired:  
-  cert-fake:     
-  cert-clean:    
+  [Go]
+  go-build        Build binary to bin/x509-watch
+  go-run          Run without building
+  go-test         Run tests
+  go-vet          Vet source code
+  go-fmt          Format source code
+  go-tidy         Tidy go modules
+  go-cover        Run tests with coverage
+  go-clean        Remove build artifacts
 
-[Docker]
-  docker-up:     
-  docker-down:   
-  docker-logs:
+  [Certificates]
+  certs           Generate all test certs
+  cert-good       Generate 10 valid certs
+  cert-expired    Generate an expired cert
+  cert-fake       Generate a malformed cert
+  cert-clean      Remove all certs
+
+  [Docker]
+  docker-up       Start containers
+  docker-down     Stop containers
+  docker-logs     Tail container logs
+
 ```
 
 
