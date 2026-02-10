@@ -26,7 +26,60 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: "http://127.0.0.1:8200"
     command: vault server -dev
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  vault-setup:
+    image: hashicorp/vault:1.21
+    container_name: vault-setup
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root"
+    volumes:
+      - ./vault/vault-pki-setup.sh:/vault-pki-setup.sh:ro
+      - vault-certs:/vault/certs:rw
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache bash jq
+        mkdir -p /vault/certs
+        chmod 777 /vault/certs
+        bash /vault-pki-setup.sh
+    networks:
+      - network
+    depends_on:
+      vault:
+        condition: service_healthy
+
+  vault-agent:
+    image: hashicorp/vault:1.21
+    user: "0:0"
+    container_name: vault-agent
+    command: vault agent -config=/vault/config/agent.hcl
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+    volumes:
+      - ./vault/vault-agent:/vault/config:ro
+      - vault-certs:/vault/certs:rw
+    networks:
+      - network
+    healthcheck:
+      test: ["CMD", "test", "-f", "/vault/certs/pki-cert.pem"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    depends_on:
+      vault-setup:
+        condition: service_completed_successfully
 
   x509-watch:
     container_name: x509-watch
@@ -43,19 +96,18 @@ services:
       - "--interval=1m"
       - "--log-level=info"
     volumes:
-      - ./certs:/certs:ro
+      - vault-certs:/certs:ro
     ports:
       - "9101:9101"
     networks:
       - network
+    restart: on-failure
+    depends_on:
+      vault-agent:
+        condition: service_healthy
 
 networks:
   network:
 
 volumes:
-  vault_data: {}
-  prometheus-storage: {}
-  alertmanager-storage: {}
-
-
-  
+  vault-certs: {}
