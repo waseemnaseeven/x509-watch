@@ -48,6 +48,14 @@ var (
 		[]string{"common_name", "issuer", "filepath"},
 	)
 
+	certsByExpiryBucket = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "x509_certs_by_expiry_bucket",
+			Help: "Number of certificates grouped by expiry time range",
+		},
+		[]string{"range"},
+	)
+
 	certErrorsByType = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "x509_cert_errors_total",
@@ -65,6 +73,20 @@ var (
 	)
 )
 
+// expiryBuckets defines the ranges for certificate expiry bucketing.
+// Ordered from most urgent to least. A cert falls into the first matching bucket.
+var expiryBuckets = []struct {
+	Label     string
+	Threshold time.Duration
+}{
+	{"expired", 0},
+	{"<1d", 24 * time.Hour},
+	{"<7d", 7 * 24 * time.Hour},
+	{"<30d", 30 * 24 * time.Hour},
+	{"<90d", 90 * 24 * time.Hour},
+	{">=90d", 0}, // catch-all
+}
+
 func init() {
 	prometheus.MustRegister(
 		validCerts,
@@ -72,6 +94,7 @@ func init() {
 		certNotAfter,
 		certExpired,
 		certExpiresInSeconds,
+		certsByExpiryBucket,
 		certErrorsByType,
 		buildInfo,
 	)
@@ -79,14 +102,15 @@ func init() {
 
 // PromPublisher publishes certificate metrics to Prometheus.
 type PromPublisher struct {
-	Clock func() time.Time
+	Clock          func() time.Time
+	PerCertMetrics bool // when false, only aggregate/bucket metrics are published
 }
 
 func NewPromPublisher(clock func() time.Time) *PromPublisher {
 	if clock == nil {
 		clock = time.Now
 	}
-	return &PromPublisher{Clock: clock}
+	return &PromPublisher{Clock: clock, PerCertMetrics: true}
 }
 
 func boolToFloat(b bool) float64 {
@@ -103,35 +127,47 @@ func (p *PromPublisher) PublishCerts(certs []*certloader.CertInfo, errs []*certl
 	certNotAfter.Reset()
 	certExpired.Reset()
 	certExpiresInSeconds.Reset()
+	certsByExpiryBucket.Reset()
 	certErrorsByType.Reset()
 
 	now := p.Clock()
 
 	validCount := 0
+	bucketCounts := make(map[string]int)
+	for _, b := range expiryBuckets {
+		bucketCounts[b.Label] = 0
+	}
 
 	for _, c := range certs {
-		labels := prometheus.Labels{
-			"common_name": c.CommonName,
-			"issuer":      c.Issuer,
-			"filepath":    c.FilePath,
-		}
-
-		notBefore := float64(c.NotBefore.Unix())
-		notAfter := float64(c.NotAfter.Unix())
 		expiresIn := c.ExpiresInSeconds(now)
 		expired := c.IsExpired(now)
 
-		certNotBefore.With(labels).Set(notBefore)
-		certNotAfter.With(labels).Set(notAfter)
-		certExpired.With(labels).Set(boolToFloat(expired))
-		certExpiresInSeconds.With(labels).Set(expiresIn)
+		if p.PerCertMetrics {
+			labels := prometheus.Labels{
+				"common_name": c.CommonName,
+				"issuer":      c.Issuer,
+				"filepath":    c.FilePath,
+			}
+			certNotBefore.With(labels).Set(float64(c.NotBefore.Unix()))
+			certNotAfter.With(labels).Set(float64(c.NotAfter.Unix()))
+			certExpired.With(labels).Set(boolToFloat(expired))
+			certExpiresInSeconds.With(labels).Set(expiresIn)
+		}
 
 		if !expired {
 			validCount++
 		}
+
+		// Classify into expiry bucket
+		remaining := time.Duration(expiresIn) * time.Second
+		bucketCounts[classifyExpiryBucket(remaining)]++
 	}
 
 	validCerts.Set(float64(validCount))
+
+	for label, count := range bucketCounts {
+		certsByExpiryBucket.WithLabelValues(label).Set(float64(count))
+	}
 
 	errorsByType := make(map[certloader.CertErrorType]int)
 	for _, e := range errs {
@@ -141,6 +177,21 @@ func (p *PromPublisher) PublishCerts(certs []*certloader.CertInfo, errs []*certl
 	for errType, count := range errorsByType {
 		certErrorsByType.WithLabelValues(string(errType)).Set(float64(count))
 	}
+}
+
+func classifyExpiryBucket(remaining time.Duration) string {
+	if remaining <= 0 {
+		return "expired"
+	}
+	for _, b := range expiryBuckets {
+		if b.Label == "expired" || b.Label == ">=90d" {
+			continue
+		}
+		if remaining < b.Threshold {
+			return b.Label
+		}
+	}
+	return ">=90d"
 }
 
 func SetBuildInfo(version, revision string) {

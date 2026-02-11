@@ -31,11 +31,12 @@ type loader interface {
 // === Config ===
 
 type config struct {
-	listenAddr   string
-	certFile     string
-	certDir      string
-	scanInterval time.Duration
-	logLevel     string
+	listenAddr     string
+	certFile       string
+	certDir        string
+	scanInterval   time.Duration
+	logLevel       string
+	perCertMetrics bool
 }
 
 func parseFlags() config {
@@ -56,6 +57,7 @@ func parseFlags() config {
 	flag.StringVar(&cfg.certDir, "cert-dir", "", "Path to a directory containing certificates")
 	flag.DurationVar(&cfg.scanInterval, "interval", 0, "Scan interval (0 = only once at startup)")
 	flag.StringVar(&cfg.logLevel, "log-level", "info", "Log level: debug, info, warn, error")
+	flag.BoolVar(&cfg.perCertMetrics, "per-cert-metrics", true, "Expose per-certificate metrics (disable for high cardinality environments)")
 	flag.BoolVar(&showHelp, "help", false, "Show help and exit")
 	flag.BoolVar(&showHelp, "h", false, "Show help and exit (shorthand)")
 
@@ -194,6 +196,7 @@ func main() {
 	}
 
 	pub := metrics.NewPromPublisher(time.Now)
+	pub.PerCertMetrics = cfg.perCertMetrics
 
 	if cfg.scanInterval > 0 {
 		logger.Info("Starting periodic scan", "interval", cfg.scanInterval)
