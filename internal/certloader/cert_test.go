@@ -22,5 +22,3 @@ func TestCertificateInfo_IsExpired(t *testing.T) {
 		t.Fatalf("expected certificate to NOT be expired")
 	}
 }
-
-

@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type DirLoader struct {
@@ -34,8 +35,23 @@ func (l *DirLoader) LoadCertificates(ctx context.Context) ([]*CertInfo, []*CertE
 			return ctx.Err()
 		}
 
+		base := filepath.Base(path)
+
+		// Skip hidden files
+		if strings.HasPrefix(base, ".") {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Skip directories
 		if d.IsDir() {
+			return nil
+		}
+
+		// Skip private keys
+		if strings.HasSuffix(path, ".key") {
 			return nil
 		}
 

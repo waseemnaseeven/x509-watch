@@ -43,66 +43,73 @@ func (l *FileLoader) LoadCertificates(ctx context.Context) ([]*CertInfo, []*Cert
 	}
 
 	var certs []*CertInfo
+	var errs []*CertError
+
 	rest := data
 	seenPEM := false
 
+	// PEM Parsing
 	for {
 		if len(rest) == 0 {
 			break
 		}
 
-		var block *pem.Block
-		block, rest = pem.Decode(rest)
+		// Try PEM file
+		block, remaining := pem.Decode(rest)
 		if block == nil {
 			break
 		}
 		seenPEM = true
+		rest = remaining
 
-		switch block.Type {
-		case "CERTIFICATE":
-			cert, err := x509.ParseCertificate(block.Bytes)
-			if err != nil {
-				return nil, []*CertError{NewCertError(l.Path, ErrTypeParse, err)}
-			}
-			info := &CertInfo{
-				CommonName: cert.Subject.CommonName,
-				Issuer:     cert.Issuer.CommonName,
-				NotBefore:  cert.NotBefore,
-				NotAfter:   cert.NotAfter,
-				FilePath:   l.Path,
-			}
-			certs = append(certs, info)
-
-		default:
-			l.Logger.Debug("Ignoring PEM block type", "type", block.Type, "path", l.Path)
+		if block.Type != "CERTIFICATE" {
+			continue
 		}
+
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			errs = append(errs, NewCertError(l.Path, ErrTypeParse, err))
+			continue
+		}
+		info := &CertInfo{
+			FilePath:   l.Path,
+			CommonName: cert.Subject.CommonName,
+			Issuer:     cert.Issuer.CommonName,
+			NotBefore:  cert.NotBefore,
+			NotAfter:   cert.NotAfter,
+		}
+		certs = append(certs, info)
+
 	}
 
-	if seenPEM {
-		if len(certs) == 0 {
+	// DEM Parsing
+	if !seenPEM {
+		if len(data) == 0 {
 			return nil, []*CertError{
-				NewCertError(l.Path, ErrTypePEM, fmt.Errorf("no CERTIFICATE PEM block found")),
+				NewCertError(l.Path, ErrTypePEM, fmt.Errorf("empty file")),
 			}
 		}
-		return certs, nil
-	}
 
-	l.Logger.Debug("No PEM blocks found, trying DER parse", "path", l.Path)
+		l.Logger.Debug("No PEM found, trying DER", "path", l.Path)
 
-	cert, err := x509.ParseCertificate(data)
-	if err != nil {
-		return nil, []*CertError{
-			NewCertError(l.Path, ErrTypePEM, fmt.Errorf("not PEM nor DER X.509: %w", err)),
+		// Try DER
+		cert, err := x509.ParseCertificate(data)
+		if err != nil {
+			return nil, []*CertError{
+				NewCertError(l.Path, ErrTypePEM, fmt.Errorf("not PEM nor DER X.509: %w", err)),
+			}
 		}
+
+		// DER Success
+		info := &CertInfo{
+			FilePath:   l.Path,
+			CommonName: cert.Subject.CommonName,
+			Issuer:     cert.Issuer.CommonName,
+			NotBefore:  cert.NotBefore,
+			NotAfter:   cert.NotAfter,
+		}
+		return []*CertInfo{info}, nil
 	}
 
-	info := &CertInfo{
-		CommonName: cert.Subject.CommonName,
-		Issuer:     cert.Issuer.CommonName,
-		NotBefore:  cert.NotBefore,
-		NotAfter:   cert.NotAfter,
-		FilePath:   l.Path,
-	}
-
-	return []*CertInfo{info}, nil
+	return certs, errs
 }
