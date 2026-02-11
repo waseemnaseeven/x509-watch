@@ -12,8 +12,8 @@ import (
 var (
 	validCerts = prometheus.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "x509_valid_certs",
-			Help: "Number of current valid certs observed by x509-watch",
+			Name: "x509_valid_certs_total",
+			Help: "Number of current valid (non-expired) certificates",
 		},
 	)
 	certNotBefore = prometheus.NewGaugeVec(
@@ -48,19 +48,12 @@ var (
 		[]string{"common_name", "issuer", "filepath"},
 	)
 
-	certErrorGauge = prometheus.NewGaugeVec(
+	certErrorsByType = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "x509_cert_error",
-			Help: "1 if an error occurred for this cert file, labelled by error_type",
+			Name: "x509_cert_errors_total",
+			Help: "Number of certificates load errors by type in the last scan",
 		},
-		[]string{"filepath", "error_type"},
-	)
-
-	readErrorsCounter = prometheus.NewCounter(
-		prometheus.CounterOpts{
-			Name: "x509_read_errors",
-			Help: "Total number of certificate read/parse errors",
-		},
+		[]string{"error_type"}, // read, parse, pem, unknown
 	)
 
 	buildInfo = prometheus.NewGaugeVec(
@@ -79,8 +72,7 @@ func init() {
 		certNotAfter,
 		certExpired,
 		certExpiresInSeconds,
-		certErrorGauge,
-		readErrorsCounter,
+		certErrorsByType,
 		buildInfo,
 	)
 }
@@ -111,7 +103,7 @@ func (p *PromPublisher) PublishCerts(certs []*certloader.CertInfo, errs []*certl
 	certNotAfter.Reset()
 	certExpired.Reset()
 	certExpiresInSeconds.Reset()
-	certErrorGauge.Reset()
+	certErrorsByType.Reset()
 
 	now := p.Clock()
 
@@ -141,12 +133,13 @@ func (p *PromPublisher) PublishCerts(certs []*certloader.CertInfo, errs []*certl
 
 	validCerts.Set(float64(validCount))
 
+	errorsByType := make(map[certloader.CertErrorType]int)
 	for _, e := range errs {
-		readErrorsCounter.Inc()
-		certErrorGauge.With(prometheus.Labels{
-			"filepath":   e.Path,
-			"error_type": string(e.Type),
-		}).Set(1.0)
+		errorsByType[e.Type]++
+	}
+
+	for errType, count := range errorsByType {
+		certErrorsByType.WithLabelValues(string(errType)).Set(float64(count))
 	}
 }
 
