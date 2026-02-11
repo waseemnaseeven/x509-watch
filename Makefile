@@ -64,6 +64,7 @@ help:
 	@echo "  $(_CYAN)docker-up$(_NO)       Start containers"
 	@echo "  $(_CYAN)docker-down$(_NO)     Stop containers"
 	@echo "  $(_CYAN)docker-logs$(_NO)     Tail container logs"
+	@echo "  $(_CYAN)docker-clean$(_NO)    Clear containers"
 	@echo ""
 
 # ═════ GO ═════
